@@ -1,0 +1,12 @@
+Metadata-Version: 2.4
+Name: dfm-engine
+Version: 0.1.0
+Summary: DFM-Analyzer manufacturability analysis engine
+Requires-Python: >=3.11
+Requires-Dist: numpy>=1.26
+Requires-Dist: scipy>=1.11
+Requires-Dist: trimesh>=4.0
+Requires-Dist: rtree>=1.2
+Requires-Dist: networkx>=3.2
+Provides-Extra: fast
+Requires-Dist: embreex>=2.17; extra == "fast"

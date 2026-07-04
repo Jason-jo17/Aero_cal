@@ -1,0 +1,26 @@
+/* ==========================================
+   AeroCalc-Suite — App-level layout
+   ========================================== */
+
+.appShell {
+  display: flex;
+  min-height: 100vh;
+  background-color: #f9fafb;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.mainContent {
+  flex: 1;
+  padding: 3rem;
+  overflow-y: auto;
+}
+
+.simLoading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 60vh;
+  color: #888;
+  border: 2px dashed #eaeaea;
+  border-radius: 8px;
+}

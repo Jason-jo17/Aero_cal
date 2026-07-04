@@ -1,0 +1,12 @@
+pyproject.toml
+dfm_engine/__init__.py
+dfm_engine/additive_manufacturing.py
+dfm_engine/cnc_milling.py
+dfm_engine/geometry_analysis.py
+dfm_engine/injection_molding.py
+dfm_engine/sheet_metal.py
+dfm_engine.egg-info/PKG-INFO
+dfm_engine.egg-info/SOURCES.txt
+dfm_engine.egg-info/dependency_links.txt
+dfm_engine.egg-info/requires.txt
+dfm_engine.egg-info/top_level.txt

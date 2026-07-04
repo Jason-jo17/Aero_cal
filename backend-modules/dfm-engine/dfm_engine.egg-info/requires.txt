@@ -1,0 +1,8 @@
+numpy>=1.26
+scipy>=1.11
+trimesh>=4.0
+rtree>=1.2
+networkx>=3.2
+
+[fast]
+embreex>=2.17

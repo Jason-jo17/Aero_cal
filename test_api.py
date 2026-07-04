@@ -1,0 +1,51 @@
+import sys
+import os
+
+# Add API Gateway to path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../apps/api-gateway")))
+
+from fastapi.testclient import TestClient
+from api_gateway.main import app
+
+client = TestClient(app)
+
+def test_endpoints():
+    print("Testing Polar Curves...")
+    res = client.post("/aero/polar-curves", json={
+        "camber_percent": 2,
+        "thickness_percent": 12
+    })
+    if res.status_code == 200:
+        data = res.json()
+        print("✓ Polar curves generated. Keys:", list(data.keys()))
+    else:
+        print("✗ Error:", res.text)
+        
+    print("\nTesting Wing Planform...")
+    res = client.post("/aero/wing-planform", json={
+        "span": 10,
+        "root_chord": 2,
+        "tip_chord": 1,
+        "sweep_angle_deg": 15
+    })
+    if res.status_code == 200:
+        data = res.json()
+        print("✓ Wing Planform calculated:", data)
+    else:
+        print("✗ Error:", res.text)
+        
+    print("\nTesting Motor Prop Matcher...")
+    res = client.post("/propulsion/motor-prop-match", json={
+        "motor_kv": 2300,
+        "voltage": 14.8,
+        "prop_diameter_in": 5.0,
+        "prop_pitch_in": 4.5
+    })
+    if res.status_code == 200:
+        data = res.json()
+        print("✓ Motor matched:", data)
+    else:
+        print("✗ Error:", res.text)
+
+if __name__ == "__main__":
+    test_endpoints()

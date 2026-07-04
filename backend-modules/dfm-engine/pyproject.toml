@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dfm-engine"
+version = "0.1.0"
+description = "DFM-Analyzer manufacturability analysis engine"
+requires-python = ">=3.11"
+dependencies = [
+    "numpy>=1.26",
+    "scipy>=1.11",
+    "trimesh>=4.0",
+    "rtree>=1.2",
+    "networkx>=3.2",
+]
+
+[project.optional-dependencies]
+fast = ["embreex>=2.17"]
+
+[tool.setuptools.packages.find]
+include = ["dfm_engine*"]

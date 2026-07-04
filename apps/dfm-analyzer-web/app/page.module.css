@@ -1,0 +1,146 @@
+/* ==========================================
+   DFM-Analyzer — App-level layout
+   ========================================== */
+
+.pageShell {
+  min-height: 100vh;
+  background-color: #f9fafb;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+/* ── Header ── */
+.header {
+  background-color: #111;
+  color: #fff;
+  padding: 1rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.headerBrand h1 {
+  font-size: 1.25rem;
+  font-weight: bold;
+  margin: 0;
+}
+
+.headerBrand p {
+  font-size: 0.875rem;
+  color: #888;
+  margin: 0;
+}
+
+.engineToggleGroup {
+  display: flex;
+  gap: 1rem;
+}
+
+.engineBtn {
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  border: 1px solid #333;
+  cursor: pointer;
+  background-color: transparent;
+  color: #fff;
+  font-size: 0.875rem;
+  transition: background 0.2s;
+}
+
+.engineBtn:hover {
+  background-color: #1f1f1f;
+}
+
+.engineBtnActive {
+  background-color: #333;
+}
+
+/* ── Main Content ── */
+.main {
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.twoCol {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  height: calc(100vh - 150px);
+}
+
+/* ── Left column ── */
+.leftCol {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.uploadZone {
+  background-color: #fff;
+  padding: 1.5rem;
+  border-radius: 8px;
+  border: 2px dashed #ccc;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.uploadZone:hover {
+  border-color: #888;
+}
+
+.fileInput {
+  display: none;
+}
+
+.uploadIcon {
+  margin: 0 auto 0.5rem;
+  display: block;
+}
+
+.uploadTitle {
+  margin: 0 0 0.25rem;
+  font-size: 1rem;
+  font-weight: bold;
+}
+
+.uploadSubtitle {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #666;
+}
+
+.viewerWrap {
+  flex: 1;
+  background-color: #fff;
+  border-radius: 8px;
+  border: 1px solid #eaeaea;
+  overflow: hidden;
+  position: relative;
+}
+
+.runBtn {
+  padding: 1rem;
+  background-color: #000;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 1rem;
+  transition: background 0.2s;
+}
+
+.runBtn:hover:not(:disabled) {
+  background-color: #333;
+}
+
+.runBtn:disabled {
+  background-color: #999;
+  cursor: not-allowed;
+}
+
+/* ── Right column ── */
+.rightCol {
+  overflow-y: auto;
+}

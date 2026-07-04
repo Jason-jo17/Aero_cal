@@ -1,0 +1,13 @@
+pyproject.toml
+aero_engine/__init__.py
+aero_engine/multirotor_performance.py
+aero_engine/naca_generator.py
+aero_engine/panel_method.py
+aero_engine/polar_curves.py
+aero_engine/propulsion.py
+aero_engine/wing_planform.py
+aero_engine.egg-info/PKG-INFO
+aero_engine.egg-info/SOURCES.txt
+aero_engine.egg-info/dependency_links.txt
+aero_engine.egg-info/requires.txt
+aero_engine.egg-info/top_level.txt

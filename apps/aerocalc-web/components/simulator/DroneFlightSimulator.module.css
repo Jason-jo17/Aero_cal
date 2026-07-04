@@ -1,0 +1,54 @@
+.container {
+  max-width: 1200px;
+}
+
+.heading {
+  font-size: 1.875rem;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+
+.subheading {
+  color: #666;
+  margin-bottom: 1.5rem;
+  max-width: 900px;
+}
+
+.canvasWrap {
+  width: 100%;
+  height: 600px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #eaeaea;
+  background: linear-gradient(#bfdbfe, #eff6ff);
+}
+
+.controls {
+  margin-top: 1rem;
+  color: #555;
+  font-size: 0.875rem;
+}
+
+.hud {
+  background: rgba(0, 0, 0, 0.65);
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-family: monospace;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+.emptyState {
+  height: 60vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px dashed #eaeaea;
+  border-radius: 8px;
+  color: #888;
+  padding: 3rem;
+  text-align: center;
+  max-width: 700px;
+}

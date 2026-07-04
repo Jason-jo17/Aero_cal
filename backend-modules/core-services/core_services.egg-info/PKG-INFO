@@ -1,0 +1,11 @@
+Metadata-Version: 2.4
+Name: core-services
+Version: 0.1.0
+Summary: Shared DB models, auth, and CRUD used by api-gateway (and optionally other services)
+Requires-Python: >=3.11
+Requires-Dist: sqlalchemy[asyncio]>=2.0
+Requires-Dist: asyncpg>=0.29
+Requires-Dist: alembic>=1.13
+Requires-Dist: pydantic[email]>=2.9
+Requires-Dist: python-jose[cryptography]>=3.3
+Requires-Dist: passlib[bcrypt]>=1.7
