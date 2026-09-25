@@ -1,6 +1,7 @@
 from aero_engine.aircraft.models import (
     AircraftConfig, Surface, VerticalTail, VTail, Fuselage, MassProperties,
 )
+from aero_engine.wing_planform import calculate_surface_planform
 
 
 def make_fuselage(**overrides) -> Fuselage:
@@ -39,12 +40,26 @@ def make_conventional_config(wing_overrides=None, **mass_overrides) -> AircraftC
 
 
 def make_flying_wing_config(**mass_overrides) -> AircraftConfig:
-    defaults = dict(cg_x_position=2.4)
+    """
+    cg_x_position defaults to the wing's own aerodynamic center (quarter
+    of its swept MAC, measured from the MAC leading edge -- see
+    stability._surface_ac_x), so that a flying wing -- whose neutral
+    point equals the wing AC, having no tail -- sits at ~0 static margin
+    by default. This wing is swept 25 deg, so its MAC leading edge is
+    offset well aft of the root leading edge; a naive x_position + 0.25 *
+    root-chord estimate (ignoring that sweep offset) would be wrong here.
+    """
+    wing_span, wing_root_chord, wing_tip_chord, wing_sweep_deg = 11.0, 1.6, 1.6, 25.0
+    wing_x_position = 2.0
+    wing_planform = calculate_surface_planform(wing_span, wing_root_chord, wing_tip_chord, wing_sweep_deg)
+    wing_ac_x = wing_x_position + wing_planform["x_mac_le"] + 0.25 * wing_planform["mac"]
+
+    defaults = dict(cg_x_position=wing_ac_x)
     defaults.update(mass_overrides)
     return AircraftConfig(
         configuration_type="flying_wing",
-        wing=Surface(span=11.0, root_chord=1.6, tip_chord=1.6, sweep_deg=25.0,
-                     dihedral_deg=3.0, x_position=2.0),
+        wing=Surface(span=wing_span, root_chord=wing_root_chord, tip_chord=wing_tip_chord,
+                     sweep_deg=wing_sweep_deg, dihedral_deg=3.0, x_position=wing_x_position),
         fuselage=make_fuselage(),
         mass=make_mass(**defaults),
     )

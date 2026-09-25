@@ -40,3 +40,81 @@ def project_v_tail_equivalent_areas(total_area: float, dihedral_v_deg: float) ->
     s_h_eff = total_area * (math.cos(dihedral_rad) ** 2)
     s_v_eff = total_area * (math.sin(dihedral_rad) ** 2)
     return s_h_eff, s_v_eff
+
+
+from .models import AircraftConfig
+
+
+def _surface_ac_x(x_position: float, planform: dict) -> float:
+    """Aerodynamic center x-location: the quarter-chord of the surface's MAC."""
+    return x_position + planform["x_mac_le"] + 0.25 * planform["mac"]
+
+
+def calculate_longitudinal_stability(config: AircraftConfig, geometry: dict) -> dict:
+    """
+    Static longitudinal stability: neutral point, static margin, Cm_alpha.
+    Uses the general two-lifting-surface neutral-point equation (Roskam
+    Part VI / Raymer Ch. 16), which handles a canard as the same formula
+    with a negative (forward) moment arm.
+    """
+    wing = config.wing
+    wing_planform = geometry["wing"]["planform"]
+    S_wing = wing_planform["area"]
+    AR_wing = wing_planform["aspect_ratio"]
+    MAC_wing = wing_planform["mac"]
+    wing_ac_x = _surface_ac_x(wing.x_position, wing_planform)
+
+    CL_alpha_wing = estimate_cl_alpha_3d(AR_wing, wing.sweep_deg)
+    h_ac_wing = 0.25
+    h_cg = (config.mass.cg_x_position - (wing.x_position + wing_planform["x_mac_le"])) / MAC_wing
+
+    if config.configuration_type == "flying_wing":
+        h_n = h_ac_wing
+        tail_volume_coefficient = None
+    else:
+        if config.configuration_type == "v_tail":
+            vt = config.v_tail
+            v_planform = geometry["v_tail"]["planform"]
+            S_other, _ = project_v_tail_equivalent_areas(v_planform["area"], vt.dihedral_v_deg)
+            other_ac_x = _surface_ac_x(vt.x_position, v_planform)
+            AR_other = v_planform["aspect_ratio"]
+            sweep_other = vt.sweep_deg
+        else:
+            if config.configuration_type in ("conventional", "t_tail"):
+                other, other_geom = config.horizontal_tail, geometry["horizontal_tail"]
+            elif config.configuration_type == "canard":
+                other, other_geom = config.canard, geometry["canard"]
+            else:
+                raise ValueError(f"Unhandled configuration_type: {config.configuration_type}")
+            other_planform = other_geom["planform"]
+            S_other = other_planform["area"]
+            other_ac_x = _surface_ac_x(other.x_position, other_planform)
+            AR_other = other_planform["aspect_ratio"]
+            sweep_other = other.sweep_deg
+
+        CL_alpha_other = estimate_cl_alpha_3d(AR_other, sweep_other)
+        l = other_ac_x - wing_ac_x
+        deps_dalpha = 2 * CL_alpha_wing / (math.pi * AR_wing)
+        tail_volume_coefficient = (S_other * l) / (S_wing * MAC_wing)
+
+        h_n = h_ac_wing + (CL_alpha_other / CL_alpha_wing) * (S_other / S_wing) * (l / MAC_wing) * (1 - deps_dalpha)
+
+    static_margin = h_n - h_cg
+
+    if static_margin < 0:
+        classification = "unstable"
+    elif static_margin < 0.05:
+        classification = "marginal"
+    elif static_margin <= 0.20:
+        classification = "stable"
+    else:
+        classification = "stable_sluggish"
+
+    return {
+        "neutral_point_mac": h_n,
+        "cg_mac": h_cg,
+        "static_margin_percent": static_margin * 100,
+        "static_margin_classification": classification,
+        "cm_alpha": -CL_alpha_wing * static_margin,
+        "tail_volume_coefficient": tail_volume_coefficient,
+    }

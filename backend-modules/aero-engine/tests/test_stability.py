@@ -1,6 +1,9 @@
 import math
 import pytest
 from aero_engine.aircraft.stability import estimate_cl_alpha_3d, project_v_tail_equivalent_areas
+from aero_engine.aircraft.geometry import generate_aircraft_geometry
+from aero_engine.aircraft.stability import calculate_longitudinal_stability
+from tests.conftest import make_conventional_config, make_flying_wing_config, make_canard_config
 
 
 def test_estimate_cl_alpha_3d_matches_helmbold_equation():
@@ -31,3 +34,40 @@ def test_project_v_tail_equivalent_areas_at_45_degrees_splits_evenly():
     s_h_eff, s_v_eff = project_v_tail_equivalent_areas(total_area=2.0, dihedral_v_deg=45.0)
     assert s_h_eff == pytest.approx(1.0, abs=1e-6)
     assert s_v_eff == pytest.approx(1.0, abs=1e-6)
+
+
+def test_conventional_static_margin_in_typical_range():
+    config = make_conventional_config()  # default cg_x_position=2.56
+    geometry = generate_aircraft_geometry(config)
+    result = calculate_longitudinal_stability(config, geometry)
+    assert 5.0 <= result["static_margin_percent"] <= 15.0
+    assert result["static_margin_classification"] == "stable"
+    assert result["cm_alpha"] < 0
+    assert result["tail_volume_coefficient"] > 0
+
+
+def test_cg_aft_of_neutral_point_is_unstable():
+    config = make_conventional_config(cg_x_position=2.8)
+    geometry = generate_aircraft_geometry(config)
+    result = calculate_longitudinal_stability(config, geometry)
+    assert result["static_margin_percent"] < 0
+    assert result["static_margin_classification"] == "unstable"
+
+
+def test_flying_wing_neutral_point_equals_wing_aerodynamic_center():
+    config = make_flying_wing_config()  # cg_x_position defaults to the wing AC -> static margin ~0
+    geometry = generate_aircraft_geometry(config)
+    result = calculate_longitudinal_stability(config, geometry)
+    assert result["neutral_point_mac"] == pytest.approx(0.25, abs=1e-6)
+    assert result["tail_volume_coefficient"] is None
+    assert result["static_margin_percent"] == pytest.approx(0.0, abs=1e-3)
+    assert result["static_margin_classification"] == "marginal"
+
+
+def test_canard_produces_finite_negative_moment_arm():
+    config = make_canard_config()
+    geometry = generate_aircraft_geometry(config)
+    result = calculate_longitudinal_stability(config, geometry)
+    assert result["tail_volume_coefficient"] < 0  # canard AC is forward of wing AC
+    assert math.isfinite(result["neutral_point_mac"])
+    assert math.isfinite(result["static_margin_percent"])
