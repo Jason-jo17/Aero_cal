@@ -3,7 +3,9 @@ import pytest
 from aero_engine.aircraft.stability import estimate_cl_alpha_3d, project_v_tail_equivalent_areas
 from aero_engine.aircraft.geometry import generate_aircraft_geometry
 from aero_engine.aircraft.stability import calculate_longitudinal_stability
-from tests.conftest import make_conventional_config, make_flying_wing_config, make_canard_config
+from tests.conftest import (
+    make_conventional_config, make_flying_wing_config, make_canard_config, make_v_tail_config,
+)
 from aero_engine.aircraft.models import Surface, Fuselage, MassProperties, AircraftConfig
 from aero_engine.aircraft.stability import calculate_lateral_stability
 
@@ -91,3 +93,33 @@ def test_sweep_only_contribution_is_small_and_stabilizing():
     # expect a small negative (marginal) value, not strongly stable.
     assert -0.02 < result["cl_beta"] < 0
     assert result["cl_beta_classification"] == "marginal"
+
+
+from aero_engine.aircraft.stability import calculate_directional_stability
+
+
+def test_conventional_vertical_tail_gives_stable_weathercock():
+    config = make_conventional_config()
+    geometry = generate_aircraft_geometry(config)
+    result = calculate_directional_stability(config, geometry)
+    assert 0.04 < result["cn_beta"] < 0.12
+    assert result["cn_beta_classification"] == "stable"
+    assert result["vertical_tail_volume_coefficient"] > 0
+
+
+def test_flying_wing_has_no_directional_stability():
+    config = make_flying_wing_config()
+    geometry = generate_aircraft_geometry(config)
+    result = calculate_directional_stability(config, geometry)
+    assert result["cn_beta"] == 0.0
+    assert result["cn_beta_classification"] == "unstable"
+    assert result["vertical_tail_volume_coefficient"] is None
+
+
+def test_v_tail_uses_projected_vertical_area():
+    config = make_v_tail_config()
+    geometry = generate_aircraft_geometry(config)
+    result = calculate_directional_stability(config, geometry)
+    assert result["cn_beta"] > 0
+    assert result["vertical_tail_volume_coefficient"] is not None
+    assert result["vertical_tail_volume_coefficient"] > 0

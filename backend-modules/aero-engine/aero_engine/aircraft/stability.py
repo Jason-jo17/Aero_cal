@@ -155,3 +155,54 @@ def calculate_lateral_stability(config: AircraftConfig, geometry: dict) -> dict:
         "cl_beta": cl_beta_total,
         "cl_beta_classification": classification,
     }
+
+
+def calculate_directional_stability(config: AircraftConfig, geometry: dict) -> dict:
+    """
+    Static directional (weathercock) stability: Cn_beta from the vertical
+    tail volume coefficient. Fuselage side-area destabilizing contribution
+    and sidewash are not modeled (see design spec's Known Limitations).
+    """
+    wing_planform = geometry["wing"]["planform"]
+    S_wing = wing_planform["area"]
+    span_wing = config.wing.span
+    wing_ac_x = _surface_ac_x(config.wing.x_position, wing_planform)
+
+    if config.configuration_type in ("conventional", "t_tail", "canard"):
+        vt = config.vertical_tail
+        v_planform = geometry["vertical_tail"]["planform"]
+        S_v = v_planform["area"]
+        v_ac_x = _surface_ac_x(vt.x_position, v_planform)
+        AR_v = v_planform["aspect_ratio"]
+        sweep_v = vt.sweep_deg
+    elif config.configuration_type == "v_tail":
+        vtail = config.v_tail
+        v_planform = geometry["v_tail"]["planform"]
+        _, S_v = project_v_tail_equivalent_areas(v_planform["area"], vtail.dihedral_v_deg)
+        v_ac_x = _surface_ac_x(vtail.x_position, v_planform)
+        AR_v = v_planform["aspect_ratio"]
+        sweep_v = vtail.sweep_deg
+    else:  # flying_wing: no vertical surface, no weathercock stability
+        return {
+            "cn_beta": 0.0,
+            "cn_beta_classification": "unstable",
+            "vertical_tail_volume_coefficient": None,
+        }
+
+    l_v = v_ac_x - wing_ac_x
+    V_V = (S_v * l_v) / (S_wing * span_wing)
+    CL_alpha_v = estimate_cl_alpha_3d(AR_v, sweep_v)
+    cn_beta = CL_alpha_v * V_V
+
+    if cn_beta > 0.05:
+        classification = "stable"
+    elif cn_beta >= 0:
+        classification = "marginal"
+    else:
+        classification = "unstable"
+
+    return {
+        "cn_beta": cn_beta,
+        "cn_beta_classification": classification,
+        "vertical_tail_volume_coefficient": V_V,
+    }
