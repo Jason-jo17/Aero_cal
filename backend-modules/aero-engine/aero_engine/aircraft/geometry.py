@@ -20,13 +20,20 @@ def generate_surface_geometry(
     dihedral_rad = math.radians(dihedral_deg)
 
     le_sweep_offset = half_span * math.tan(sweep_rad)
-    tip_z_offset = half_span * math.tan(dihedral_rad)
+    # half_span is the panel's true (unrotated) length; project it into
+    # spanwise (y) and vertical (z) components via cos/sin of the dihedral
+    # angle. This is correct for ANY dihedral angle, including 90 degrees
+    # (a pure V-tail panel) -- unlike `half_span * tan(dihedral)`, which
+    # only approximates the vertical offset correctly for small angles and
+    # diverges to infinity as dihedral approaches 90 degrees.
+    tip_y_offset = half_span * math.cos(dihedral_rad)
+    tip_z_offset = half_span * math.sin(dihedral_rad)
 
     root_le = (x_position, 0.0, z_position)
     root_te = (x_position + root_chord, 0.0, z_position)
 
     def tip_corners(sign: int):
-        y = sign * half_span
+        y = sign * tip_y_offset
         tip_le_x = x_position + le_sweep_offset
         tip_te_x = tip_le_x + tip_chord
         tip_z = z_position + tip_z_offset

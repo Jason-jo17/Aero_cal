@@ -19,7 +19,7 @@ def make_mass(**overrides) -> MassProperties:
 def make_conventional_config(wing_overrides=None, **mass_overrides) -> AircraftConfig:
     """
     Cessna-172-like proportions: wing AR ~6.9, tail volume coefficient
-    ~0.14, giving a static margin in the 5-15% MAC range at the default
+    ~0.395, giving a static margin in the 5-15% MAC range at the default
     CG (see docs/superpowers/specs/2026-09-25-aircraft-designer-design.md
     Task 9 derivation).
     """

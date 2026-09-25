@@ -8,8 +8,8 @@ class Surface(BaseModel):
     span: float = Field(gt=0)
     root_chord: float = Field(gt=0)
     tip_chord: float = Field(gt=0)
-    sweep_deg: float = 0.0
-    dihedral_deg: float = 0.0
+    sweep_deg: float = Field(ge=-80, le=80, default=0.0)  # leading-edge sweep, degrees
+    dihedral_deg: float = Field(ge=-80, le=80, default=0.0)
     twist_deg: float = 0.0
     airfoil: str = "0012"  # NACA 4-digit; reference/display only, not used in v1 stability math
     x_position: float = Field(ge=0)
@@ -22,7 +22,7 @@ class VerticalTail(BaseModel):
     height: float = Field(gt=0)
     root_chord: float = Field(gt=0)
     tip_chord: float = Field(gt=0)
-    sweep_deg: float = 0.0
+    sweep_deg: float = Field(ge=-80, le=80, default=0.0)  # leading-edge sweep, degrees
     airfoil: str = "0012"
     x_position: float = Field(ge=0)
     z_position: float = 0.0
@@ -34,7 +34,7 @@ class VTail(BaseModel):
     root_chord: float = Field(gt=0)
     tip_chord: float = Field(gt=0)
     dihedral_v_deg: float = Field(ge=0, le=90)
-    sweep_deg: float = 0.0
+    sweep_deg: float = 0.0  # leading-edge sweep, degrees
     airfoil: str = "0012"
     x_position: float = Field(ge=0)
     z_position: float = 0.0

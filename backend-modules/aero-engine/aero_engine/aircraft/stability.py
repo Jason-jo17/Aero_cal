@@ -28,6 +28,25 @@ def estimate_cl_alpha_3d(
     return (2 * math.pi * aspect_ratio) / denominator
 
 
+def _le_sweep_to_half_chord_sweep(sweep_le_deg: float, aspect_ratio: float, taper_ratio: float) -> float:
+    """
+    Convert leading-edge sweep to half-chord sweep using the standard
+    sweep-at-any-chord-fraction relation (Raymer / DATCOM):
+
+        tan(Lambda_half_chord) = tan(Lambda_LE) - (2/AR) * (1 - taper) / (1 + taper)
+
+    This is needed because `Surface.sweep_deg` (and `VerticalTail`/`VTail`
+    `sweep_deg`) are stored as LEADING-EDGE sweep -- matching what
+    `geometry.generate_surface_geometry` actually computes for the tip LE
+    x-offset -- but the Helmbold/DATCOM lift-slope formula used by
+    `estimate_cl_alpha_3d` wants HALF-CHORD sweep. For an untapered
+    (taper_ratio=1) surface the two are identical since (1-taper)=0.
+    """
+    tan_le = math.tan(math.radians(sweep_le_deg))
+    tan_half_chord = tan_le - (2.0 / aspect_ratio) * (1 - taper_ratio) / (1 + taper_ratio)
+    return math.degrees(math.atan(tan_half_chord))
+
+
 def project_v_tail_equivalent_areas(total_area: float, dihedral_v_deg: float) -> tuple[float, float]:
     """
     Standard V-tail equivalent-area decomposition (Raymer, Aircraft
@@ -64,7 +83,8 @@ def calculate_longitudinal_stability(config: AircraftConfig, geometry: dict) -> 
     MAC_wing = wing_planform["mac"]
     wing_ac_x = _surface_ac_x(wing.x_position, wing_planform)
 
-    CL_alpha_wing = estimate_cl_alpha_3d(AR_wing, wing.sweep_deg)
+    wing_sweep_half_chord = _le_sweep_to_half_chord_sweep(wing.sweep_deg, AR_wing, wing_planform["taper_ratio"])
+    CL_alpha_wing = estimate_cl_alpha_3d(AR_wing, wing_sweep_half_chord)
     h_ac_wing = 0.25
     h_cg = (config.mass.cg_x_position - (wing.x_position + wing_planform["x_mac_le"])) / MAC_wing
 
@@ -79,6 +99,7 @@ def calculate_longitudinal_stability(config: AircraftConfig, geometry: dict) -> 
             other_ac_x = _surface_ac_x(vt.x_position, v_planform)
             AR_other = v_planform["aspect_ratio"]
             sweep_other = vt.sweep_deg
+            taper_other = v_planform["taper_ratio"]
         else:
             if config.configuration_type in ("conventional", "t_tail"):
                 other, other_geom = config.horizontal_tail, geometry["horizontal_tail"]
@@ -91,8 +112,10 @@ def calculate_longitudinal_stability(config: AircraftConfig, geometry: dict) -> 
             other_ac_x = _surface_ac_x(other.x_position, other_planform)
             AR_other = other_planform["aspect_ratio"]
             sweep_other = other.sweep_deg
+            taper_other = other_planform["taper_ratio"]
 
-        CL_alpha_other = estimate_cl_alpha_3d(AR_other, sweep_other)
+        sweep_other_half_chord = _le_sweep_to_half_chord_sweep(sweep_other, AR_other, taper_other)
+        CL_alpha_other = estimate_cl_alpha_3d(AR_other, sweep_other_half_chord)
         l = other_ac_x - wing_ac_x
         deps_dalpha = 2 * CL_alpha_wing / (math.pi * AR_wing)
         tail_volume_coefficient = (S_other * l) / (S_wing * MAC_wing)
@@ -130,7 +153,8 @@ def calculate_lateral_stability(config: AircraftConfig, geometry: dict) -> dict:
     wing_planform = geometry["wing"]["planform"]
     S_wing = wing_planform["area"]
     AR_wing = wing_planform["aspect_ratio"]
-    CL_alpha_wing = estimate_cl_alpha_3d(AR_wing, wing.sweep_deg)
+    wing_sweep_half_chord = _le_sweep_to_half_chord_sweep(wing.sweep_deg, AR_wing, wing_planform["taper_ratio"])
+    CL_alpha_wing = estimate_cl_alpha_3d(AR_wing, wing_sweep_half_chord)
 
     dihedral_rad = math.radians(wing.dihedral_deg)
     cl_beta_dihedral = -(CL_alpha_wing / 4) * dihedral_rad
@@ -191,7 +215,8 @@ def calculate_directional_stability(config: AircraftConfig, geometry: dict) -> d
 
     l_v = v_ac_x - wing_ac_x
     V_V = (S_v * l_v) / (S_wing * span_wing)
-    CL_alpha_v = estimate_cl_alpha_3d(AR_v, sweep_v)
+    sweep_v_half_chord = _le_sweep_to_half_chord_sweep(sweep_v, AR_v, v_planform["taper_ratio"])
+    CL_alpha_v = estimate_cl_alpha_3d(AR_v, sweep_v_half_chord)
     cn_beta = CL_alpha_v * V_V
 
     if cn_beta > 0.05:

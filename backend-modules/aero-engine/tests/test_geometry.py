@@ -15,9 +15,13 @@ def test_generate_surface_geometry_symmetry_sweep_dihedral():
 
     assert root_le == pytest.approx([5.0, 0.0, 0.5])
     assert root_te == pytest.approx([7.0, 0.0, 0.5])
-    # tip x offset = half_span * tan(sweep); tip z offset = half_span * tan(dihedral)
-    assert tip_le_pos == pytest.approx([7.8868, 5.0, 1.3816], abs=1e-3)
-    assert tip_te_pos == pytest.approx([8.8868, 5.0, 1.3816], abs=1e-3)
+    # tip x offset = half_span * tan(sweep);
+    # tip y offset = half_span * cos(dihedral); tip z offset = half_span * sin(dihedral)
+    # half_span=5, tan(30deg)=0.5773502692 -> le_sweep_offset=2.886751346 -> tip x = 7.886751346
+    # cos(10deg)=0.9848077530 -> tip y = 5*0.9848077530 = 4.924038765
+    # sin(10deg)=0.1736481777 -> tip z = 0.5 + 5*0.1736481777 = 1.368240889
+    assert tip_le_pos == pytest.approx([7.886751, 4.924039, 1.368241], abs=1e-3)
+    assert tip_te_pos == pytest.approx([8.886751, 4.924039, 1.368241], abs=1e-3)
 
     # Mirror symmetry: the negative-y tip matches the positive-y tip in x
     # and z, with only y negated.
@@ -41,6 +45,32 @@ def test_generate_surface_geometry_no_sweep_no_dihedral_is_flat_rectangle():
     xs = [v[0] for v in geom["vertices"]]
     assert min(xs) == pytest.approx(0.0)
     assert max(xs) == pytest.approx(1.0)  # no sweep -> tip LE stays above root LE
+
+
+def test_generate_surface_geometry_90_degree_dihedral_stays_finite():
+    # A V-tail-like panel at dihedral_deg=90 (a value VTail.dihedral_v_deg
+    # explicitly allows, ge=0, le=90) used to blow up to ~1.6e16 because
+    # `half_span * tan(dihedral)` diverges near the tan() pole at 90deg.
+    # The corrected cos/sin projection must stay finite and sane: the tip
+    # should sit essentially on the centerline (y ~ 0) and directly above
+    # the root by half_span (z ~ half_span).
+    span = 2.5
+    half_span = span / 2.0
+    geom = generate_surface_geometry(
+        span=span, root_chord=0.9, tip_chord=0.5,
+        sweep_deg=10.0, dihedral_deg=90.0,
+        x_position=6.7, z_position=0.4,
+    )
+    root_le, tip_le_pos, tip_te_pos, root_te, tip_le_neg, tip_te_neg = geom["vertices"]
+
+    for v in geom["vertices"]:
+        for coord in v:
+            assert math.isfinite(coord)
+
+    assert tip_le_pos[1] == pytest.approx(0.0, abs=1e-9)
+    assert tip_le_pos[2] == pytest.approx(0.4 + half_span, abs=1e-9)
+    assert tip_le_neg[1] == pytest.approx(0.0, abs=1e-9)
+    assert tip_le_neg[2] == pytest.approx(0.4 + half_span, abs=1e-9)
 
 
 def test_generate_vertical_surface_geometry_single_unmirrored_fin():

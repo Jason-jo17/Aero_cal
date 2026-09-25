@@ -1,6 +1,8 @@
 import math
 import pytest
-from aero_engine.aircraft.stability import estimate_cl_alpha_3d, project_v_tail_equivalent_areas
+from aero_engine.aircraft.stability import (
+    estimate_cl_alpha_3d, project_v_tail_equivalent_areas, _le_sweep_to_half_chord_sweep,
+)
 from aero_engine.aircraft.geometry import generate_aircraft_geometry
 from aero_engine.aircraft.stability import calculate_longitudinal_stability
 from tests.conftest import (
@@ -20,6 +22,24 @@ def test_estimate_cl_alpha_3d_matches_helmbold_equation():
 def test_estimate_cl_alpha_3d_rejects_non_positive_aspect_ratio():
     with pytest.raises(ValueError):
         estimate_cl_alpha_3d(aspect_ratio=0)
+
+
+def test_le_sweep_to_half_chord_sweep_zero_for_untapered_unswept_wing():
+    # taper_ratio=1 makes the (1-taper)/(1+taper) correction term vanish
+    # regardless of AR, so LE sweep and half-chord sweep coincide.
+    result = _le_sweep_to_half_chord_sweep(sweep_le_deg=0.0, aspect_ratio=6.0, taper_ratio=1.0)
+    assert result == pytest.approx(0.0, abs=1e-9)
+
+
+def test_le_sweep_to_half_chord_sweep_reduced_for_tapered_swept_wing():
+    # LE sweep 20deg, AR=6, taper=0.5:
+    # tan(20deg) = 0.3639702343
+    # correction = (2/6) * (1-0.5)/(1+0.5) = 0.3333333 * 0.3333333 = 0.1111111
+    # tan(half-chord sweep) = 0.3639702343 - 0.1111111 = 0.2528591
+    # half-chord sweep = atan(0.2528591) in degrees ~= 14.19 deg
+    result = _le_sweep_to_half_chord_sweep(sweep_le_deg=20.0, aspect_ratio=6.0, taper_ratio=0.5)
+    assert result == pytest.approx(14.19, abs=0.05)
+    assert result < 20.0
 
 
 def test_project_v_tail_equivalent_areas_pure_vertical_at_90_degrees():
@@ -75,6 +95,22 @@ def test_canard_produces_finite_negative_moment_arm():
     assert result["tail_volume_coefficient"] < 0  # canard AC is forward of wing AC
     assert math.isfinite(result["neutral_point_mac"])
     assert math.isfinite(result["static_margin_percent"])
+
+
+def test_v_tail_longitudinal_stability_is_finite_and_positive_volume_coefficient():
+    # No dedicated V-tail longitudinal test existed before (deferred gap
+    # from Task 8's review). The V-tail's projected horizontal-equivalent
+    # area sits aft of the wing (like a conventional tail), so the moment
+    # arm and tail volume coefficient should be positive here, unlike the
+    # canard case above.
+    config = make_v_tail_config()
+    geometry = generate_aircraft_geometry(config)
+    result = calculate_longitudinal_stability(config, geometry)
+    assert math.isfinite(result["neutral_point_mac"])
+    assert math.isfinite(result["static_margin_percent"])
+    assert result["tail_volume_coefficient"] is not None
+    assert math.isfinite(result["tail_volume_coefficient"])
+    assert result["tail_volume_coefficient"] > 0
 
 
 def test_dihedral_dominates_lateral_stability_when_unswept():

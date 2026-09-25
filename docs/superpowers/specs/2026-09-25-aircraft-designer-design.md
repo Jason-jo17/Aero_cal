@@ -36,7 +36,7 @@ class Surface(BaseModel):
     span: float              # full span, meters (single fin: use height instead — see VerticalTail)
     root_chord: float        # meters
     tip_chord: float         # meters
-    sweep_deg: float = 0.0   # quarter-chord sweep, degrees
+    sweep_deg: float = 0.0   # leading-edge sweep, degrees
     dihedral_deg: float = 0.0
     twist_deg: float = 0.0   # washout, negative = tip washout
     airfoil: str = "0012"    # NACA 4-digit, used for Cl_alpha estimate
@@ -122,9 +122,12 @@ horizontal tail, canard, and (using effective areas, §4.4) the V-tail.
 For each present surface, generate:
 
 - **Planform corners** (root LE, root TE, tip LE, tip TE) using span/2 (mirrored
-  for the other half), sweep (converted from quarter-chord to leading-edge
-  sweep using root/tip chord), dihedral (z-offset at tip = `(span/2) *
-  tan(dihedral_rad)`), and twist (stored for reference, not drawn).
+  for the other half), sweep (`sweep_deg` is used directly as leading-edge
+  sweep: tip LE x-offset = `(span/2) * tan(sweep_rad)`), dihedral (tip
+  y-offset = `(span/2) * cos(dihedral_rad)`, tip z-offset = `(span/2) *
+  sin(dihedral_rad)` -- a true rotation, valid for any dihedral angle up to
+  90 degrees, unlike a `tan(dihedral_rad)` approximation which only holds
+  for small angles), and twist (stored for reference, not drawn).
 - **3-view projections**: `top_view` (x,y pairs — planform as seen from above),
   `front_view` (y,z pairs — as seen from the nose), `side_view` (x,z pairs —
   as seen from the side), each as a closed polygon (root LE → tip LE → tip TE
@@ -160,6 +163,15 @@ class AircraftGeometry(BaseModel):
 ```
 
 ## 4. Stability Module (`aero_engine/aircraft/stability.py`)
+
+Sweep is stored as **leading-edge sweep** in the data model (`Surface.sweep_deg`,
+`VerticalTail.sweep_deg`, `VTail.sweep_deg`), matching what the geometry
+module directly computes for the tip leading-edge x-offset. It is converted
+to **half-chord sweep** internally, via `_le_sweep_to_half_chord_sweep`
+(the standard `tan(Λ_half_chord) = tan(Λ_LE) - (2/AR)*(1-taper)/(1+taper)`
+relation), immediately before being fed into the `estimate_cl_alpha_3d`
+lift-curve-slope estimate below, since the Helmbold/DATCOM formula is
+defined in terms of half-chord sweep, not leading-edge sweep.
 
 All formulas below are standard subsonic-conceptual-design estimates
 (Roskam Part VI / Raymer Ch. 16 style). Each is a named, independently
