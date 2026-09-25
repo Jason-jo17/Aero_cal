@@ -4,7 +4,18 @@ from api_gateway.main import app
 client = TestClient(app)
 
 def test_endpoints():
-    print("Testing Polar Curves...")
+    print("Testing NACA 4-Digit Generator...")
+    res = client.post("/aero/naca", json={
+        "digits": "2412",
+        "n_points": 100
+    })
+    if res.status_code == 200:
+        data = res.json()
+        print("OK NACA generated successfully. Points:", len(data.get("x_upper", [])))
+    else:
+        print("FAIL Error:", res.text)
+
+    print("\nTesting Polar Curves...")
     res = client.post("/aero/polar-curves", json={
         "camber_percent": 2,
         "thickness_percent": 12

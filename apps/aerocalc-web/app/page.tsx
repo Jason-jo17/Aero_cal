@@ -27,7 +27,7 @@ export default function Home() {
       <div className={styles.appShell}>
         <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
         <main className={styles.mainContent}>
-          <p data-testid="debug-active-tab">ACTIVE_TAB_DEBUG:{activeTab}</p>
+          <p data-testid="debug-active-tab" className={styles.srOnly}>ACTIVE_TAB_DEBUG:{activeTab}</p>
           {activeTab === "naca" && <NacaGenerator />}
           {activeTab === "polar" && <PolarCurveGenerator />}
           {activeTab === "airfoil_analysis" && <AirfoilAnalyzer />}

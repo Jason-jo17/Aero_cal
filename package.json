@@ -1,5 +1,5 @@
 {
-  "name": "temp_turbo",
+  "name": "aerocalcdfm",
   "private": true,
   "scripts": {
     "build": "turbo run build",
