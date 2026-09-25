@@ -58,5 +58,66 @@ def test_endpoints():
     else:
         print("[FAIL] Error:", res.text)
 
+
+def test_aircraft_design_endpoint():
+    print("\nTesting Aircraft Designer (conventional)...")
+    res = client.post("/aircraft/design", json={
+        "configuration_type": "conventional",
+        "wing": {"span": 11.0, "root_chord": 1.6, "tip_chord": 1.6,
+                  "sweep_deg": 0.0, "dihedral_deg": 5.0, "x_position": 2.0},
+        "horizontal_tail": {"span": 3.4, "root_chord": 0.9, "tip_chord": 0.6,
+                              "sweep_deg": 5.0, "x_position": 6.5, "z_position": 0.9},
+        "vertical_tail": {"height": 1.5, "root_chord": 1.0, "tip_chord": 0.5,
+                            "sweep_deg": 15.0, "x_position": 6.8, "z_position": 0.3},
+        "fuselage": {"length": 8.0, "max_width": 1.2, "max_height": 1.4,
+                      "nose_length": 1.5, "tail_length": 2.0},
+        "mass": {"mass_kg": 1000.0, "cg_x_position": 2.56, "cruise_speed_ms": 60.0},
+    })
+    if res.status_code == 200:
+        data = res.json()
+        print("[OK] Aircraft design calculated. Static margin:",
+              data["stability"]["static_margin_percent"], "% MAC")
+    else:
+        print("[FAIL] Error:", res.text)
+    assert res.status_code == 200
+    data = res.json()
+    assert "geometry" in data and "stability" in data
+    assert isinstance(data["stability"]["static_margin_percent"], float)
+
+
+def test_aircraft_design_endpoint_rejects_mismatched_surfaces():
+    print("\nTesting Aircraft Designer validation (v_tail config with horizontal_tail)...")
+    res = client.post("/aircraft/design", json={
+        "configuration_type": "v_tail",
+        "wing": {"span": 11.0, "root_chord": 1.6, "tip_chord": 1.6, "x_position": 2.0},
+        "horizontal_tail": {"span": 3.4, "root_chord": 0.9, "tip_chord": 0.6, "x_position": 6.5},
+        "v_tail": {"span": 2.5, "root_chord": 0.9, "tip_chord": 0.5, "dihedral_v_deg": 40.0, "x_position": 6.7},
+        "fuselage": {"length": 8.0, "max_width": 1.2, "max_height": 1.4, "nose_length": 1.5, "tail_length": 2.0},
+        "mass": {"mass_kg": 1000.0, "cg_x_position": 2.56, "cruise_speed_ms": 60.0},
+    })
+    if res.status_code == 422:
+        print("[OK] Mismatched surfaces correctly rejected with 422")
+    else:
+        print("[FAIL] Expected 422, got:", res.status_code, res.text)
+    assert res.status_code == 422
+
+
+def test_aircraft_design_endpoint_rejects_zero_span():
+    print("\nTesting Aircraft Designer validation (zero-span wing)...")
+    res = client.post("/aircraft/design", json={
+        "configuration_type": "flying_wing",
+        "wing": {"span": 0, "root_chord": 1.6, "tip_chord": 1.6, "x_position": 2.0},
+        "fuselage": {"length": 8.0, "max_width": 1.2, "max_height": 1.4, "nose_length": 1.5, "tail_length": 2.0},
+        "mass": {"mass_kg": 1000.0, "cg_x_position": 2.0, "cruise_speed_ms": 60.0},
+    })
+    if res.status_code == 422:
+        print("[OK] Zero-span wing correctly rejected with 422")
+    else:
+        print("[FAIL] Expected 422, got:", res.status_code, res.text)
+    assert res.status_code == 422
+
 if __name__ == "__main__":
     test_endpoints()
+    test_aircraft_design_endpoint()
+    test_aircraft_design_endpoint_rejects_mismatched_surfaces()
+    test_aircraft_design_endpoint_rejects_zero_span()
