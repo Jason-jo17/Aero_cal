@@ -61,3 +61,41 @@ def generate_surface_geometry(
         "vertices": vertices,
         "edges": edges,
     }
+
+
+def generate_vertical_surface_geometry(
+    height: float,
+    root_chord: float,
+    tip_chord: float,
+    sweep_deg: float,
+    x_position: float,
+    z_position: float = 0.0,
+) -> dict:
+    """
+    Generate geometry for a single (unmirrored) vertical fin standing up
+    from z_position to z_position + height.
+    """
+    sweep_rad = math.radians(sweep_deg)
+    le_sweep_offset = height * math.tan(sweep_rad)
+
+    root_le = (x_position, 0.0, z_position)
+    root_te = (x_position + root_chord, 0.0, z_position)
+    tip_le = (x_position + le_sweep_offset, 0.0, z_position + height)
+    tip_te = (tip_le[0] + tip_chord, 0.0, z_position + height)
+
+    polygon = [root_le, tip_le, tip_te, root_te, root_le]
+
+    top_view = [[p[0], p[1]] for p in polygon]
+    front_view = [[p[1], p[2]] for p in polygon]
+    side_view = [[p[0], p[2]] for p in polygon]
+
+    vertices = [list(root_le), list(tip_le), list(tip_te), list(root_te)]
+    edges = [[0, 1], [1, 2], [2, 3], [3, 0]]
+
+    return {
+        "top_view": top_view,
+        "front_view": front_view,
+        "side_view": side_view,
+        "vertices": vertices,
+        "edges": edges,
+    }

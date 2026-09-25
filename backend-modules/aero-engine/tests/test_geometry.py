@@ -1,5 +1,6 @@
+import math
 import pytest
-from aero_engine.aircraft.geometry import generate_surface_geometry
+from aero_engine.aircraft.geometry import generate_surface_geometry, generate_vertical_surface_geometry
 
 
 def test_generate_surface_geometry_symmetry_sweep_dihedral():
@@ -40,3 +41,21 @@ def test_generate_surface_geometry_no_sweep_no_dihedral_is_flat_rectangle():
     xs = [v[0] for v in geom["vertices"]]
     assert min(xs) == pytest.approx(0.0)
     assert max(xs) == pytest.approx(1.0)  # no sweep -> tip LE stays above root LE
+
+
+def test_generate_vertical_surface_geometry_single_unmirrored_fin():
+    geom = generate_vertical_surface_geometry(
+        height=1.5, root_chord=1.0, tip_chord=0.5, sweep_deg=15.0,
+        x_position=6.8, z_position=0.3,
+    )
+    root_le, tip_le, tip_te, root_te = geom["vertices"]
+
+    assert root_le == pytest.approx([6.8, 0.0, 0.3])
+    assert root_te == pytest.approx([7.8, 0.0, 0.3])
+
+    expected_tip_le_x = 6.8 + 1.5 * math.tan(math.radians(15.0))
+    assert tip_le == pytest.approx([expected_tip_le_x, 0.0, 1.8], abs=1e-6)
+
+    assert len(geom["vertices"]) == 4
+    assert len(geom["edges"]) == 4
+    assert all(v[1] == 0.0 for v in geom["vertices"])  # unmirrored: y stays 0
