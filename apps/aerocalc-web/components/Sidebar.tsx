@@ -1,4 +1,4 @@
-import { Plane, Cpu, Activity, LayoutTemplate, Fan, FileBarChart, Rocket } from "lucide-react";
+import { Plane, Cpu, Activity, LayoutTemplate, Fan, FileBarChart, Rocket, DraftingCompass } from "lucide-react";
 import styles from "./Sidebar.module.css";
 
 interface SidebarProps {
@@ -58,6 +58,17 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
             >
               <LayoutTemplate size={18} />
               Wing Planform
+            </button>
+          </li>
+          <li className={styles.navItem}>
+            <button
+              type="button"
+              onClick={() => setActiveTab("aircraft")}
+              className={`${styles.navButton} ${activeTab === "aircraft" ? styles.navButtonActive : ""}`}
+              title="Aircraft Designer"
+            >
+              <DraftingCompass size={18} />
+              Aircraft Designer
             </button>
           </li>
           <li className={styles.navItem}>
