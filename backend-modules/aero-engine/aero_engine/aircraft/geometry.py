@@ -170,3 +170,80 @@ def generate_fuselage_geometry(
         "vertices": vertices,
         "edges": edges,
     }
+
+
+from .models import AircraftConfig, Surface
+from ..wing_planform import calculate_surface_planform
+
+
+def _surface_geometry_with_planform(surface: Surface) -> dict:
+    geom = generate_surface_geometry(
+        span=surface.span,
+        root_chord=surface.root_chord,
+        tip_chord=surface.tip_chord,
+        sweep_deg=surface.sweep_deg,
+        dihedral_deg=surface.dihedral_deg,
+        x_position=surface.x_position,
+        z_position=surface.z_position,
+    )
+    geom["planform"] = calculate_surface_planform(
+        surface.span, surface.root_chord, surface.tip_chord, surface.sweep_deg
+    )
+    return geom
+
+
+def generate_aircraft_geometry(config: AircraftConfig) -> dict:
+    """
+    Assemble the full geometry payload for an AircraftConfig: every
+    present surface's 2D/3D points plus its planform metrics, dispatched
+    by configuration_type.
+    """
+    geometry: dict = {
+        "wing": _surface_geometry_with_planform(config.wing),
+        "horizontal_tail": None,
+        "vertical_tail": None,
+        "canard": None,
+        "v_tail": None,
+        "fuselage": {
+            **generate_fuselage_geometry(
+                length=config.fuselage.length,
+                max_width=config.fuselage.max_width,
+                max_height=config.fuselage.max_height,
+                nose_length=config.fuselage.nose_length,
+                tail_length=config.fuselage.tail_length,
+            ),
+            "planform": None,
+        },
+    }
+
+    if config.horizontal_tail is not None:
+        geometry["horizontal_tail"] = _surface_geometry_with_planform(config.horizontal_tail)
+
+    if config.vertical_tail is not None:
+        vt = config.vertical_tail
+        geom = generate_vertical_surface_geometry(
+            height=vt.height, root_chord=vt.root_chord, tip_chord=vt.tip_chord,
+            sweep_deg=vt.sweep_deg, x_position=vt.x_position, z_position=vt.z_position,
+        )
+        # The single-fin planform is computed by treating `height` as
+        # `span` in the shared helper (a one-sided trapezoid, no
+        # mirroring). This gives a self-consistent area/AR for this
+        # module's own CL_alpha estimate; it does not match published
+        # "effective AR with image effect" conventions for vertical tails.
+        geom["planform"] = calculate_surface_planform(vt.height, vt.root_chord, vt.tip_chord, vt.sweep_deg)
+        geometry["vertical_tail"] = geom
+
+    if config.canard is not None:
+        geometry["canard"] = _surface_geometry_with_planform(config.canard)
+
+    if config.v_tail is not None:
+        vtail = config.v_tail
+        geom = generate_surface_geometry(
+            span=vtail.span, root_chord=vtail.root_chord, tip_chord=vtail.tip_chord,
+            sweep_deg=vtail.sweep_deg, dihedral_deg=vtail.dihedral_v_deg,
+            x_position=vtail.x_position, z_position=vtail.z_position,
+        )
+        geom["planform"] = calculate_surface_planform(vtail.span, vtail.root_chord, vtail.tip_chord, vtail.sweep_deg)
+        geometry["v_tail"] = geom
+
+    return geometry

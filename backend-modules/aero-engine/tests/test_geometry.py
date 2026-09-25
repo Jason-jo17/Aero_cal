@@ -70,3 +70,44 @@ def test_generate_fuselage_geometry_outline():
     assert geom["vertices"][0] == pytest.approx([0.0, 0.0, 0.0])   # nose tip
     assert geom["vertices"][-1] == pytest.approx([8.0, 0.0, 0.0])  # tail tip
     assert len(geom["front_view"]) == 17  # 16-segment cross-section ellipse + closing point
+
+
+from aero_engine.aircraft.geometry import generate_aircraft_geometry
+from tests.conftest import (
+    make_conventional_config, make_flying_wing_config, make_canard_config, make_v_tail_config,
+)
+
+
+def test_generate_aircraft_geometry_conventional_has_wing_tails_no_canard():
+    geometry = generate_aircraft_geometry(make_conventional_config())
+    assert geometry["wing"] is not None
+    assert geometry["wing"]["planform"]["area"] > 0
+    assert geometry["horizontal_tail"] is not None
+    assert geometry["vertical_tail"] is not None
+    assert geometry["canard"] is None
+    assert geometry["v_tail"] is None
+    assert geometry["fuselage"] is not None
+    assert geometry["fuselage"]["planform"] is None
+
+
+def test_generate_aircraft_geometry_flying_wing_has_only_wing():
+    geometry = generate_aircraft_geometry(make_flying_wing_config())
+    assert geometry["wing"] is not None
+    assert geometry["horizontal_tail"] is None
+    assert geometry["vertical_tail"] is None
+    assert geometry["canard"] is None
+    assert geometry["v_tail"] is None
+
+
+def test_generate_aircraft_geometry_canard_has_canard_not_horizontal_tail():
+    geometry = generate_aircraft_geometry(make_canard_config())
+    assert geometry["canard"] is not None
+    assert geometry["horizontal_tail"] is None
+    assert geometry["vertical_tail"] is not None
+
+
+def test_generate_aircraft_geometry_v_tail_has_v_tail_not_separate_tails():
+    geometry = generate_aircraft_geometry(make_v_tail_config())
+    assert geometry["v_tail"] is not None
+    assert geometry["horizontal_tail"] is None
+    assert geometry["vertical_tail"] is None
