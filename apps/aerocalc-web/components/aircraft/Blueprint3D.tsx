@@ -10,15 +10,15 @@ import type { AircraftGeometry, SurfaceGeometry } from "../../lib/types";
 // three (x, z, y): aft along three's x-axis, up stays up, spanwise along
 // three's z-axis.
 function toThreeCoords(v: number[]): [number, number, number] {
-  return [v[0], v[2], v[1]];
+  return [v[0]!, v[2]!, v[1]!];
 }
 
 function SurfaceWireframe({ geometry, color }: { geometry: SurfaceGeometry; color: string }) {
   return (
     <>
       {geometry.edges.map(([a, b], i) => {
-        const start = geometry.vertices[a];
-        const end = geometry.vertices[b];
+        const start = geometry.vertices[a!];
+        const end = geometry.vertices[b!];
         if (!start || !end) return null;
         return (
           <Line

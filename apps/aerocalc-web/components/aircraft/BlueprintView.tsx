@@ -8,8 +8,8 @@ type ViewKey = "top_view" | "front_view" | "side_view";
 function pointsToPath(points: number[][], negateSecond: boolean): string {
   if (points.length === 0) return "";
   const commands = points.map((p, i) => {
-    const y = negateSecond ? -p[1] : p[1];
-    return `${i === 0 ? "M" : "L"} ${p[0].toFixed(3)} ${y.toFixed(3)}`;
+    const y = negateSecond ? -p[1]! : p[1]!;
+    return `${i === 0 ? "M" : "L"} ${p[0]!.toFixed(3)} ${y.toFixed(3)}`;
   });
   return commands.join(" ") + " Z";
 }
@@ -39,8 +39,8 @@ function ViewPanel({
     );
   }
 
-  const xs = allPoints.map((p) => p[0]);
-  const ys = allPoints.map((p) => (negateSecond ? -p[1] : p[1]));
+  const xs = allPoints.map((p) => p[0]!);
+  const ys = allPoints.map((p) => (negateSecond ? -p[1]! : p[1]!));
   const minX = Math.min(...xs);
   const maxX = Math.max(...xs);
   const minY = Math.min(...ys);
@@ -64,7 +64,7 @@ function ViewPanel({
 export default function BlueprintView({ geometry }: { geometry: AircraftGeometry }) {
   const wingSpan = geometry.wing.planform?.span ?? 0;
   const wingMac = geometry.wing.planform?.mac ?? 0;
-  const fuselageLength = geometry.fuselage.side_view.reduce((max, p) => Math.max(max, p[0]), 0);
+  const fuselageLength = geometry.fuselage.side_view.reduce((max, p) => Math.max(max, p[0]!), 0);
 
   return (
     <div className={styles.container}>
