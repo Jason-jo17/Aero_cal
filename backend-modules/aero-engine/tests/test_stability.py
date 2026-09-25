@@ -4,6 +4,8 @@ from aero_engine.aircraft.stability import estimate_cl_alpha_3d, project_v_tail_
 from aero_engine.aircraft.geometry import generate_aircraft_geometry
 from aero_engine.aircraft.stability import calculate_longitudinal_stability
 from tests.conftest import make_conventional_config, make_flying_wing_config, make_canard_config
+from aero_engine.aircraft.models import Surface, Fuselage, MassProperties, AircraftConfig
+from aero_engine.aircraft.stability import calculate_lateral_stability
 
 
 def test_estimate_cl_alpha_3d_matches_helmbold_equation():
@@ -71,3 +73,21 @@ def test_canard_produces_finite_negative_moment_arm():
     assert result["tail_volume_coefficient"] < 0  # canard AC is forward of wing AC
     assert math.isfinite(result["neutral_point_mac"])
     assert math.isfinite(result["static_margin_percent"])
+
+
+def test_dihedral_dominates_lateral_stability_when_unswept():
+    config = make_conventional_config()  # wing sweep_deg=0.0, dihedral_deg=5.0
+    geometry = generate_aircraft_geometry(config)
+    result = calculate_lateral_stability(config, geometry)
+    assert -0.12 <= result["cl_beta"] <= -0.08
+    assert result["cl_beta_classification"] == "stable"
+
+
+def test_sweep_only_contribution_is_small_and_stabilizing():
+    config = make_conventional_config(wing_overrides={"sweep_deg": 20.0, "dihedral_deg": 0.0})
+    geometry = generate_aircraft_geometry(config)
+    result = calculate_lateral_stability(config, geometry)
+    # Sweep alone is a much weaker contributor than 5deg of dihedral -
+    # expect a small negative (marginal) value, not strongly stable.
+    assert -0.02 < result["cl_beta"] < 0
+    assert result["cl_beta_classification"] == "marginal"

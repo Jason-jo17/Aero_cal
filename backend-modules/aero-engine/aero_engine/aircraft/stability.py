@@ -118,3 +118,40 @@ def calculate_longitudinal_stability(config: AircraftConfig, geometry: dict) -> 
         "cm_alpha": -CL_alpha_wing * static_margin,
         "tail_volume_coefficient": tail_volume_coefficient,
     }
+
+
+def calculate_lateral_stability(config: AircraftConfig, geometry: dict) -> dict:
+    """
+    Static lateral stability: dihedral effect (Cl_beta), combining the
+    direct-dihedral contribution and the wing-sweep contribution (both
+    small-angle rule-of-thumb estimates).
+    """
+    wing = config.wing
+    wing_planform = geometry["wing"]["planform"]
+    S_wing = wing_planform["area"]
+    AR_wing = wing_planform["aspect_ratio"]
+    CL_alpha_wing = estimate_cl_alpha_3d(AR_wing, wing.sweep_deg)
+
+    dihedral_rad = math.radians(wing.dihedral_deg)
+    cl_beta_dihedral = -(CL_alpha_wing / 4) * dihedral_rad
+
+    rho = 1.225
+    v = config.mass.cruise_speed_ms
+    weight_n = config.mass.mass_kg * 9.81
+    cl_trim = weight_n / (0.5 * rho * v ** 2 * S_wing)
+    sweep_rad = math.radians(wing.sweep_deg)
+    cl_beta_sweep = -cl_trim * math.tan(sweep_rad) / (math.pi * AR_wing)
+
+    cl_beta_total = cl_beta_dihedral + cl_beta_sweep
+
+    if cl_beta_total < -0.02:
+        classification = "stable"
+    elif cl_beta_total <= 0:
+        classification = "marginal"
+    else:
+        classification = "unstable"
+
+    return {
+        "cl_beta": cl_beta_total,
+        "cl_beta_classification": classification,
+    }
