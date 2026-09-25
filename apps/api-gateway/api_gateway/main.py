@@ -21,7 +21,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-from api_gateway.routers import aero, dfm, propulsion, auth, projects
+from api_gateway.routers import aero, dfm, propulsion, auth, projects, aircraft
 
 # Include Routers
 app.include_router(aero.router)
@@ -29,6 +29,7 @@ app.include_router(dfm.router)
 app.include_router(propulsion.router)
 app.include_router(auth.router)
 app.include_router(projects.router)
+app.include_router(aircraft.router)
 
 @app.get("/")
 def root():

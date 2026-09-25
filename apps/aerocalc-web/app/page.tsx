@@ -9,6 +9,7 @@ import WingPlanformDesigner from "../components/calculators/WingPlanformDesigner
 import MultirotorConfigurator from "../components/calculators/MultirotorConfigurator";
 import MotorPropMatcher from "../components/calculators/MotorPropMatcher";
 import AirfoilAnalyzer from "../components/calculators/AirfoilAnalyzer";
+import AircraftDesigner from "../components/aircraft/AircraftDesigner";
 import { DroneConfigProvider } from "../contexts/DroneConfigContext";
 import styles from "./app.module.css";
 
@@ -32,6 +33,7 @@ export default function Home() {
           {activeTab === "polar" && <PolarCurveGenerator />}
           {activeTab === "airfoil_analysis" && <AirfoilAnalyzer />}
           {activeTab === "wing" && <WingPlanformDesigner />}
+          {activeTab === "aircraft" && <AircraftDesigner />}
           {activeTab === "multirotor" && <MultirotorConfigurator />}
           {activeTab === "motor" && <MotorPropMatcher />}
           {activeTab === "flight_sim" && <DroneFlightSimulator />}
