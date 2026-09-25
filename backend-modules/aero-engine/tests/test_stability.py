@@ -123,3 +123,47 @@ def test_v_tail_uses_projected_vertical_area():
     assert result["cn_beta"] > 0
     assert result["vertical_tail_volume_coefficient"] is not None
     assert result["vertical_tail_volume_coefficient"] > 0
+
+
+from aero_engine.aircraft.stability import analyze_stability
+
+
+def test_analyze_stability_returns_full_expected_shape():
+    config = make_conventional_config()
+    geometry = generate_aircraft_geometry(config)
+    result = analyze_stability(config, geometry)
+    expected_keys = {
+        "neutral_point_mac", "cg_mac", "static_margin_percent", "static_margin_classification",
+        "cm_alpha", "tail_volume_coefficient", "cl_beta", "cl_beta_classification",
+        "cn_beta", "cn_beta_classification", "vertical_tail_volume_coefficient", "warnings",
+    }
+    assert expected_keys.issubset(result.keys())
+    assert isinstance(result["warnings"], list)
+
+
+def test_analyze_stability_flying_wing_warns_about_trim():
+    config = make_flying_wing_config()
+    geometry = generate_aircraft_geometry(config)
+    result = analyze_stability(config, geometry)
+    assert any("reflex" in w.lower() or "washout" in w.lower() for w in result["warnings"])
+
+
+def test_analyze_stability_canard_warns_about_downwash_assumption():
+    config = make_canard_config()
+    geometry = generate_aircraft_geometry(config)
+    result = analyze_stability(config, geometry)
+    assert any("downwash" in w.lower() or "canard" in w.lower() for w in result["warnings"])
+
+
+def test_analyze_stability_warns_when_cg_aft_of_neutral_point():
+    config = make_conventional_config(cg_x_position=2.8)
+    geometry = generate_aircraft_geometry(config)
+    result = analyze_stability(config, geometry)
+    assert any("neutral point" in w.lower() or "unstable" in w.lower() for w in result["warnings"])
+
+
+def test_analyze_stability_warns_when_cg_outside_fuselage_length():
+    config = make_conventional_config(cg_x_position=20.0)  # fuselage.length is 8.0
+    geometry = generate_aircraft_geometry(config)
+    result = analyze_stability(config, geometry)
+    assert any("fuselage" in w.lower() for w in result["warnings"])

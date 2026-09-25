@@ -206,3 +206,56 @@ def calculate_directional_stability(config: AircraftConfig, geometry: dict) -> d
         "cn_beta_classification": classification,
         "vertical_tail_volume_coefficient": V_V,
     }
+
+
+def analyze_stability(config: AircraftConfig, geometry: dict) -> dict:
+    """
+    Runs the full static stability analysis (longitudinal, lateral,
+    directional) and assembles warnings for cases the underlying formulas
+    don't fully capture, or physically odd inputs that still compute a
+    number.
+    """
+    longitudinal = calculate_longitudinal_stability(config, geometry)
+    lateral = calculate_lateral_stability(config, geometry)
+    directional = calculate_directional_stability(config, geometry)
+
+    warnings: list[str] = []
+
+    if config.configuration_type == "flying_wing":
+        warnings.append(
+            "Flying wing: pitch trim requires a reflexed airfoil or washout, "
+            "which this tool does not model. Neutral point is based on the "
+            "wing's aerodynamic center only."
+        )
+
+    if config.configuration_type == "canard":
+        warnings.append(
+            "Canard: the neutral-point calculation reuses the same downwash "
+            "correction term used for an aft tail, which is physically "
+            "backward for a forward canard surface. Treat this result as a "
+            "rougher approximation than for conventional/T-tail configs."
+        )
+
+    if longitudinal["static_margin_percent"] < 0:
+        warnings.append(
+            "CG is aft of the neutral point: the aircraft is longitudinally "
+            "unstable as configured."
+        )
+
+    if directional["cn_beta_classification"] == "unstable" and config.configuration_type != "flying_wing":
+        warnings.append(
+            "No positive weathercock stability: check vertical tail sizing/position."
+        )
+
+    if not (0.0 <= config.mass.cg_x_position <= config.fuselage.length):
+        warnings.append(
+            "CG position is outside the physical fuselage length - check "
+            "cg_x_position against fuselage.length."
+        )
+
+    return {
+        **longitudinal,
+        **lateral,
+        **directional,
+        "warnings": warnings,
+    }
