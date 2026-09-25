@@ -63,3 +63,21 @@
 .chartWrapper {
   margin-bottom: 0.75rem;
 }
+
+.limitations {
+  list-style: none;
+  margin: 0;
+  padding: 0.5rem;
+  background-color: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+}
+
+.limitationItem {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  color: #475569;
+  padding: 0.15rem 0;
+}
