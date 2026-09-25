@@ -1,6 +1,6 @@
 import math
 import pytest
-from aero_engine.aircraft.geometry import generate_surface_geometry, generate_vertical_surface_geometry
+from aero_engine.aircraft.geometry import generate_surface_geometry, generate_vertical_surface_geometry, generate_fuselage_geometry
 
 
 def test_generate_surface_geometry_symmetry_sweep_dihedral():
@@ -59,3 +59,14 @@ def test_generate_vertical_surface_geometry_single_unmirrored_fin():
     assert len(geom["vertices"]) == 4
     assert len(geom["edges"]) == 4
     assert all(v[1] == 0.0 for v in geom["vertices"])  # unmirrored: y stays 0
+
+
+def test_generate_fuselage_geometry_outline():
+    geom = generate_fuselage_geometry(
+        length=8.0, max_width=1.2, max_height=1.4, nose_length=1.5, tail_length=2.0,
+    )
+    assert geom["side_view"][1] == pytest.approx([1.5, 0.7])
+    assert geom["top_view"][1] == pytest.approx([1.5, 0.6])
+    assert geom["vertices"][0] == pytest.approx([0.0, 0.0, 0.0])   # nose tip
+    assert geom["vertices"][-1] == pytest.approx([8.0, 0.0, 0.0])  # tail tip
+    assert len(geom["front_view"]) == 17  # 16-segment cross-section ellipse + closing point
